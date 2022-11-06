@@ -1,0 +1,49 @@
+version: '3'
+
+services:
+  # MySQL
+  db:
+    build:
+      context: .
+      dockerfile: .infrastructure/Dockerfile.dev
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: db
+      MYSQL_USER: docker
+      MYSQL_PASSWORD: docker
+      TZ: 'Asia/Tokyo'
+    container_name: mysql
+    # ホスト名を明示的に指定する
+    hostname: mysql
+    volumes:
+      - ./db/data:/var/lib/mysql
+      - ./db/conf/my.cnf:/etc/mysql/conf.d/my.cnf
+      - ./db/sql:/docker-entrypoint-initdb.d
+    ports:
+      - 3306:3306
+    networks:
+      - external
+      - mysql
+  
+  # phpMyAdmin
+  phpmyadmin:
+    container_name: phpmyadmin
+    image: phpmyadmin/phpmyadmin
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOSTS=mysql
+      - PMA_USER=root
+      - PMA_PASSWORD=root
+    ports:
+      - 8080:80
+    networks:
+      - mysql
+
+networks:
+  mysql:
+    name: mysql-nw
+    driver: bridge
+  # 接続したいコンテナのネットワークを記載
+  external:
+    name: fastapi-nw
+    external: true
